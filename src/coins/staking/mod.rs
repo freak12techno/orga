@@ -21,6 +21,9 @@ pub use delegator::*;
 mod validator;
 pub use validator::*;
 
+mod params;
+pub use params::*;
+
 #[cfg(test)]
 pub const UNBONDING_SECONDS: u64 = 10; // 10 seconds
 #[cfg(not(test))]
@@ -563,6 +566,24 @@ impl<S: Symbol> Staking<S> {
                 Ok(info)
             })
             .collect()
+    }
+
+    #[query]
+    pub fn staking_params(&self) -> Result<StakingParams> {
+        Ok(StakingParams {
+            unbonding_seconds: self.unbonding_seconds,
+            max_validators: self.max_validators
+        })
+    }
+
+    #[query]
+    pub fn slashing_params(&self) -> Result<SlashingParams> {
+        Ok(SlashingParams {
+            max_offline_blocks: self.max_offline_blocks,
+            slash_fraction_downtime: self.slash_fraction_downtime,
+            slash_fraction_double_sign: self.slash_fraction_double_sign,
+            downtime_jail_seconds: self.downtime_jail_seconds
+        })
     }
 
     #[call]
