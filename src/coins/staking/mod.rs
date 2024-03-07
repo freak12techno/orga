@@ -599,6 +599,31 @@ impl<S: Symbol> Staking<S> {
     pub fn unbond_self(&mut self, val_address: Address, amount: Amount) -> Result<()> {
         assert_positive(amount)?;
         let signer = self.signer()?;
+        let ev_ctx = self.events()?;
+
+        let denom = S::NAME;
+
+        ev_ctx.add(Event {
+            r#type: "unbond".to_string(),
+            attributes: vec![
+                EventAttribute {
+                    key: "validator".into(),
+                    value: val_address.to_string().into(),
+                    index: true,
+                },
+                EventAttribute {
+                    key: "delegator".into(),
+                    value: signer.to_string().into(),
+                    index: true,
+                },
+                EventAttribute {
+                    key: "amount".into(),
+                    value: format!("{}{}", amount, denom).into(), // "1000unom"
+                    index: true,
+                },
+            ],
+        });
+
         self.unbond(val_address, signer, amount)
     }
 
@@ -611,6 +636,36 @@ impl<S: Symbol> Staking<S> {
     ) -> Result<()> {
         assert_positive(amount)?;
         let signer = self.signer()?;
+        let ev_ctx = self.events()?;
+
+        let denom = S::NAME;
+
+        ev_ctx.add(Event {
+            r#type: "redelegate".to_string(),
+            attributes: vec![
+                EventAttribute {
+                    key: "source_validator".into(),
+                    value: src_val_address.to_string().into(),
+                    index: true,
+                },
+                EventAttribute {
+                    key: "destination_validator".into(),
+                    value: dst_val_address.to_string().into(),
+                    index: true,
+                },
+                EventAttribute {
+                    key: "delegator".into(),
+                    value: signer.to_string().into(),
+                    index: true,
+                },
+                EventAttribute {
+                    key: "amount".into(),
+                    value: format!("{}{}", amount, denom).into(), // "1000unom"
+                    index: true,
+                },
+            ],
+        });
+
         self.redelegate(src_val_address, dst_val_address, signer, amount)
     }
 
@@ -637,6 +692,11 @@ impl<S: Symbol> Staking<S> {
                 EventAttribute {
                     key: "validator".into(),
                     value: validator_address.to_string().into(),
+                    index: true,
+                },
+                EventAttribute {
+                    key: "delegator".into(),
+                    value: signer.to_string().into(),
                     index: true,
                 },
                 EventAttribute {
@@ -672,11 +732,29 @@ impl<S: Symbol> Staking<S> {
     pub fn claim_all(&mut self) -> Result<()> {
         let signer = self.signer()?;
         let delegations = self.delegations(signer)?;
+
         delegations
             .iter()
             .try_for_each(|(val_address, delegation)| {
                 for (denom, amount) in delegation.liquid.iter() {
                     if *amount > 0 {
+                        let ev_ctx = self.events()?;
+                        ev_ctx.add(Event {
+                            r#type: "withdraw_rewards".to_string(),
+                            attributes: vec![
+                                EventAttribute {
+                                    key: "validator".into(),
+                                    value: val_address.clone().to_string().into(),
+                                    index: true,
+                                },
+                                EventAttribute {
+                                    key: "delegator".into(),
+                                    value: signer.to_string().into(),
+                                    index: true,
+                                }
+                            ],
+                        });
+
                         self.take_as_funding(*val_address, *amount, *denom)?;
                     }
                 }
