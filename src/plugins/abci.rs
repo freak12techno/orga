@@ -365,8 +365,6 @@ impl<T: App> Call for ABCIPlugin<T> {
                 self.inner.init_chain(&ctx)?;
             }
             BeginBlock(req) => {
-                println!("BeginBlock events before {:?}", self.events);
-                println!("BeginBlock logs before {:?}", self.logs);
                 Context::add(Events::default());
                 Context::add(Logs::default());
                 self.events.replace(vec![]);
@@ -383,8 +381,6 @@ impl<T: App> Call for ABCIPlugin<T> {
                     .replace(Context::resolve::<Logs>().unwrap().messages.clone());
                 Context::remove::<Events>();
                 Context::remove::<Logs>();
-                println!("BeginBlock events after {:?}", self.events);
-                println!("BeginBlock logs after {:?}", self.logs);
                 res?;
             }
             EndBlock(req) => {
